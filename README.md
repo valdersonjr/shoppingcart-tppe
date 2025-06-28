@@ -1,64 +1,60 @@
-# Ponto de Controle 2
+# Documentação do Projeto ShoppingCart
 
-Este documento descreve a arquitetura utilizada no projeto **ShoppingCart**, implementado com Spring Boot. O projeto segue a abordagem de **Arquitetura em Camadas (Layered Architecture)**, que organiza o sistema com base em responsabilidades bem definidas.
+## Visão Geral
 
-Essa estrutura facilita a manutenção, testes, reutilização de código e separação de interesses, sendo uma escolha comum para aplicações corporativas baseadas em Java e Spring.
+Este documento apresenta a arquitetura e implementação do projeto **ShoppingCart**, desenvolvido com Spring Boot seguindo os princípios da **Arquitetura em Camadas (Layered Architecture)**. A estrutura adotada prioriza a separação de responsabilidades, facilitando a manutenção, testes e reutilização de código em aplicações corporativas Java.
 
----
+## Arquitetura do Sistema
 
-## Estrutura de Pastas
+### Estrutura de Pastas
 
-A estrutura principal do projeto está localizada em `src/main/java/com/valderson/shoppingcart`, com as seguintes pastas:
+O projeto está organizado em `src/main/java/com/valderson/shoppingcart` com as seguintes divisões:
 
-### config
-Contém classes de configuração da aplicação, como beans personalizados, configuração de CORS, Swagger e segurança.
+**config**
+Classes de configuração da aplicação, incluindo beans personalizados, configuração de CORS, Swagger e segurança.
 
-### controller
-Responsável por receber as requisições HTTP e encaminhá-las para os serviços apropriados. Implementa a API pública da aplicação.
+**controller**
+Responsável pelo recebimento de requisições HTTP e encaminhamento para os serviços apropriados, implementando a API pública da aplicação.
 
-### dto
-Define os objetos de transferência de dados (DTOs), utilizados para trafegar informações entre camadas, evitando o uso direto das entidades.
+**dto**
+Objetos de transferência de dados (DTOs) utilizados para comunicação entre camadas, evitando exposição direta das entidades.
 
-### entity
-Agrupa as entidades JPA que representam as tabelas e relacionamentos no banco de dados.
+**entity**
+Entidades JPA que representam as tabelas e relacionamentos do banco de dados.
 
-### enums
-Contém os tipos enumerados utilizados no domínio da aplicação (por exemplo, papéis de usuários, status de pedidos etc.).
+**enums**
+Tipos enumerados do domínio da aplicação, como papéis de usuários e status de pedidos.
 
-### repository
-Define interfaces de acesso a dados estendendo `JpaRepository`, `CrudRepository` ou outras abstrações do Spring Data.
+**repository**
+Interfaces de acesso a dados que estendem `JpaRepository`, `CrudRepository` ou outras abstrações do Spring Data.
 
-### security
-Reúne as classes relacionadas à segurança da aplicação, incluindo autenticação via JWT, filtros de autorização e configurações do Spring Security.
+**security**
+Classes relacionadas à segurança da aplicação, incluindo autenticação JWT, filtros de autorização e configurações do Spring Security.
 
-### service
-Implementa a lógica de negócio da aplicação. Os controllers dependem dos serviços para realizar as operações principais.
+**service**
+Implementação da lógica de negócio da aplicação, utilizada pelos controllers para realizar operações principais.
 
-### util
-Contém classes auxiliares e funções utilitárias reutilizáveis em diferentes camadas da aplicação.
+**util**
+Classes auxiliares e funções utilitárias reutilizáveis entre diferentes camadas.
 
----
+### Estrutura de Testes
 
-## Estrutura de Testes
+Os testes estão organizados em `src/test/java/com/valderson/shoppingcart`, mantendo a hierarquia do código principal:
 
-Os testes estão organizados em `src/test/java/com/valderson/shoppingcart`, seguindo a mesma hierarquia do código principal. A estrutura foi dividida em dois tipos principais:
+**Testes Unitários**
+Localizados em `controller/unit` e `service/unit`, validam o comportamento isolado de classes e métodos utilizando mocks para dependências externas.
 
-### Testes Unitários
-Estão localizados nas pastas `controller/unit` e `service/unit`. Esses testes têm como objetivo validar o comportamento isolado de classes e métodos, utilizando mocks para dependências externas.
+**Testes de Integração**
+Localizados em `controller/integration` e `service/integration`, validam o comportamento real da aplicação com contexto Spring carregado, incluindo acesso ao banco de dados.
 
-### Testes de Integração
-Estão localizados nas pastas `controller/integration` e `service/integration`. Esses testes validam o comportamento real da aplicação com contexto Spring carregado, incluindo acesso ao banco de dados e interações entre camadas reais.
+**Parametrização**
+Implementação de testes parametrizados utilizando `@ParameterizedTest` e `@CsvSource` para validar múltiplos cenários de entrada, aumentando a cobertura e reduzindo duplicação de código.
 
-### Parametrização
-Vários testes foram implementados de forma **parametrizada**, utilizando anotações como `@ParameterizedTest` e `@CsvSource`, com o objetivo de validar múltiplos cenários de entrada de forma automatizada e limpa, aumentando a cobertura e reduzindo a duplicação de código.
-
----
-
-## Exemplos de Clean Code Aplicados
+## Princípios de Clean Code Aplicados
 
 ### Polimorfismo
 
-O projeto implementa polimorfismo através do padrão Strategy com a interface `HandlerMethodArgumentResolver` do Spring Framework. Esta abordagem permite diferentes implementações de resolução de argumentos, mantendo o código flexível e extensível.
+Implementação do padrão Strategy através da interface `HandlerMethodArgumentResolver` do Spring Framework:
 
 ```java
 @Component
@@ -82,15 +78,15 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
 }
 ```
 
-**Benefícios desta implementação:**
-- **Responsabilidade única**: A classe tem apenas uma responsabilidade - resolver o usuário atual
-- **Extensibilidade**: Novas implementações de `HandlerMethodArgumentResolver` podem ser facilmente adicionadas
-- **Desacoplamento**: O código cliente não precisa conhecer a implementação específica
-- **Testabilidade**: Cada implementação pode ser testada isoladamente
+**Benefícios:**
+- Responsabilidade única na resolução do usuário atual
+- Extensibilidade para novas implementações de `HandlerMethodArgumentResolver`
+- Desacoplamento entre código cliente e implementação específica
+- Testabilidade isolada de cada implementação
 
 ### Extração de Método
 
-A refatoração através da extração de métodos foi aplicada para eliminar duplicação de código e melhorar a legibilidade. Um exemplo claro pode ser visto na classe `ProductService`:
+Refatoração aplicada para eliminar duplicação de código e melhorar legibilidade:
 
 ```java
 public class ProductService {
@@ -107,43 +103,39 @@ public class ProductService {
 }
 ```
 
-**Benefícios da extração do método:**
-- **Reutilização**: O método `mapToResponse` pode ser utilizado em diferentes pontos do serviço
-- **Legibilidade**: O código principal fica mais limpo e focado na lógica de negócio
-- **Manutenibilidade**: Mudanças na estrutura de mapeamento precisam ser feitas em apenas um local
-- **Testabilidade**: O método extraído pode ser testado isoladamente
-- **Princípio DRY**: Elimina a duplicação de código de mapeamento
+**Benefícios:**
+- Reutilização do método `mapToResponse` em diferentes pontos do serviço
+- Legibilidade aprimorada com foco na lógica de negócio
+- Manutenibilidade centralizada para mudanças de mapeamento
+- Testabilidade isolada do método extraído
+- Aplicação do princípio DRY (Don't Repeat Yourself)
 
 ### Separação de Responsabilidades
 
-A arquitetura em camadas demonstra claramente a aplicação do princípio da responsabilidade única:
+A arquitetura em camadas demonstra a aplicação do princípio da responsabilidade única:
 
-**Controllers**: Responsáveis apenas por receber requisições HTTP e delegar para os serviços apropriados, sem conter lógica de negócio.
+**Controllers**: Recebimento de requisições HTTP e delegação para serviços, sem lógica de negócio.
 
-**Services**: Concentram toda a lógica de negócio da aplicação, mantendo-se independentes da camada de apresentação.
+**Services**: Concentração da lógica de negócio, independente da camada de apresentação.
 
-**Repositories**: Focam exclusivamente no acesso e manipulação de dados, abstraindo a complexidade de persistência.
+**Repositories**: Foco exclusivo no acesso e manipulação de dados, abstraindo complexidade de persistência.
 
-**DTOs**: Servem como contratos de dados entre camadas, evitando o vazamento de detalhes de implementação das entidades.
+**DTOs**: Contratos de dados entre camadas, evitando vazamento de detalhes de implementação das entidades.
 
 ### Nomenclatura Expressiva
 
-O projeto adota convenções de nomenclatura que tornam o código auto-documentado:
+Convenções de nomenclatura que tornam o código autodocumentado:
 
-- Classes de serviço terminam com "Service" (ex: `ProductService`)
-- Classes de controle terminam com "Controller" (ex: `ProductController`)
-- DTOs de resposta terminam com "Response" (ex: `ProductResponse`)
-- Métodos possuem nomes que expressam claramente sua intenção (ex: `mapToResponse`)
+- Classes de serviço: sufixo "Service" (ex: `ProductService`)
+- Classes de controle: sufixo "Controller" (ex: `ProductController`)
+- DTOs de resposta: sufixo "Response" (ex: `ProductResponse`)
+- Métodos com nomes que expressam claramente sua intenção (ex: `mapToResponse`)
 
-Esta abordagem reduz a necessidade de comentários excessivos e torna o código mais intuitivo para novos desenvolvedores.
-
----
-
-## Exemplos de Testes Aplicados
+## Estratégias de Teste
 
 ### Teste Parametrizado
 
-Os testes parametrizados permitem validar múltiplos cenários com diferentes entradas usando uma única implementação de teste. Um exemplo pode ser visto no teste unitário da classe `AuthService`:
+Validação de múltiplos cenários com diferentes entradas em uma única implementação:
 
 ```java
 @ParameterizedTest
@@ -185,14 +177,14 @@ void shouldRegisterUsersWithDifferentValidData(String name, String email, String
 ```
 
 **Benefícios da parametrização:**
-- **Cobertura ampla**: Testa múltiplas combinações de dados com uma única implementação
-- **Redução de duplicação**: Evita repetir a mesma lógica de teste para diferentes entradas
-- **Manutenibilidade**: Facilita a adição de novos casos de teste apenas incluindo novas linhas no `@CsvSource`
-- **Legibilidade**: Os dados de teste ficam claramente visíveis na anotação
+- Cobertura ampla com múltiplas combinações de dados
+- Redução de duplicação de lógica de teste
+- Facilidade para adicionar novos casos de teste
+- Clareza na visualização dos dados de teste
 
 ### Teste Unitário
 
-Os testes unitários validam componentes isoladamente, utilizando mocks para suas dependências. Exemplo da classe `AuthServiceTest`:
+Validação de componentes isoladamente utilizando mocks para dependências:
 
 ```java
 @ExtendWith(MockitoExtension.class)
@@ -236,14 +228,14 @@ class AuthServiceTest {
 ```
 
 **Características dos testes unitários:**
-- **Isolamento**: Testa apenas a unidade específica sem dependências externas
-- **Velocidade**: Execução rápida devido ao uso de mocks
-- **Controle**: Permite simular diferentes cenários através dos mocks
-- **Verificação de comportamento**: Valida se as dependências são chamadas corretamente
+- Isolamento da unidade específica sem dependências externas
+- Execução rápida devido ao uso de mocks
+- Controle para simulação de diferentes cenários
+- Verificação de comportamento das dependências
 
 ### Teste de Integração
 
-Os testes de integração validam o comportamento completo da aplicação com contexto Spring e banco de dados real. Exemplo da classe `AuthServiceIntegrationTest`:
+Validação do comportamento completo com contexto Spring e banco de dados real:
 
 ```java
 @SpringBootTest
@@ -302,7 +294,150 @@ class AuthServiceIntegrationTest {
 ```
 
 **Características dos testes de integração:**
-- **Contexto completo**: Carrega todo o contexto Spring da aplicação
-- **Banco real**: Utiliza banco de dados H2 em memória para testes
-- **Fluxo completo**: Testa cenários end-to-end incluindo persistência
-- **Validação realística**: Verifica se diferentes camadas funcionam corretamente em conjunto
+- Carregamento completo do contexto Spring
+- Utilização de banco de dados H2 em memória
+- Teste de cenários end-to-end incluindo persistência
+- Validação realística da integração entre camadas
+
+## Modelo de Dados
+
+O projeto utiliza PostgreSQL como sistema de gerenciamento de banco de dados, seguindo boas práticas de modelagem relacional e otimização de performance.
+
+### Tabela users
+
+Armazena informações dos usuários do sistema:
+
+```sql
+CREATE TABLE public.users (
+    id SERIAL NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT users_pkey PRIMARY KEY (id),
+    CONSTRAINT users_email_key UNIQUE (email)
+);
+
+CREATE INDEX idx_users_email ON public.users USING btree (email);
+```
+
+### Tabela products
+
+Catálogo de produtos disponíveis para compra:
+
+```sql
+CREATE TABLE public.products (
+    id SERIAL NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT products_pkey PRIMARY KEY (id),
+    CONSTRAINT products_price_check CHECK (price >= 0::NUMERIC)
+);
+```
+
+### Tabela shopping_carts
+
+Representa o carrinho de compras de cada usuário:
+
+```sql
+CREATE TABLE public.shopping_carts (
+    id SERIAL NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT shopping_carts_pkey PRIMARY KEY (id),
+    CONSTRAINT shopping_carts_user_id_key UNIQUE (user_id),
+    CONSTRAINT shopping_carts_user_id_fkey 
+        FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_shopping_carts_user_id ON public.shopping_carts USING btree (user_id);
+```
+
+### Tabela cart_items
+
+Itens individuais dentro de cada carrinho de compras:
+
+```sql
+CREATE TABLE public.cart_items (
+    id SERIAL NOT NULL,
+    shopping_cart_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER DEFAULT 1 NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT cart_items_pkey PRIMARY KEY (id),
+    CONSTRAINT cart_items_quantity_check CHECK (quantity > 0),
+    CONSTRAINT cart_items_shopping_cart_id_product_id_key 
+        UNIQUE (shopping_cart_id, product_id),
+    CONSTRAINT cart_items_shopping_cart_id_fkey 
+        FOREIGN KEY (shopping_cart_id) REFERENCES public.shopping_carts(id) ON DELETE CASCADE,
+    CONSTRAINT cart_items_product_id_fkey 
+        FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_cart_items_cart_id ON public.cart_items USING btree (shopping_cart_id);
+```
+
+### Tabela orders
+
+Registra os pedidos realizados pelos usuários:
+
+```sql
+CREATE TABLE public.orders (
+    id SERIAL NOT NULL,
+    user_id INTEGER NOT NULL,
+    total_amount NUMERIC(10, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending'::CHARACTER VARYING,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT orders_pkey PRIMARY KEY (id),
+    CONSTRAINT orders_total_amount_check CHECK (total_amount >= 0::NUMERIC),
+    CONSTRAINT orders_status_check CHECK (
+        status::TEXT = ANY (ARRAY['pending'::CHARACTER VARYING, 
+                                 'confirmed'::CHARACTER VARYING, 
+                                 'cancelled'::CHARACTER VARYING]::TEXT[])
+    ),
+    CONSTRAINT orders_user_id_fkey 
+        FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_orders_user_id ON public.orders USING btree (user_id);
+```
+
+### Tabela order_items
+
+Itens específicos de cada pedido com dados históricos:
+
+```sql
+CREATE TABLE public.order_items (
+    id SERIAL NOT NULL,
+    order_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    product_name VARCHAR(255) NOT NULL,
+    product_price NUMERIC(10, 2) NOT NULL,
+    quantity INTEGER NOT NULL,
+    subtotal NUMERIC(10, 2) NOT NULL,
+    
+    CONSTRAINT order_items_pkey PRIMARY KEY (id),
+    CONSTRAINT order_items_quantity_check CHECK (quantity > 0),
+    CONSTRAINT order_items_order_id_fkey 
+        FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE,
+    CONSTRAINT order_items_product_id_fkey 
+        FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_order_items_order_id ON public.order_items USING btree (order_id);
+```
+
+### Diagrama do Banco de Dados
+
+<img width="774" alt="image" src="https://github.com/user-attachments/assets/e2d5fa73-8236-4f80-a203-e834a9889a9b" />
