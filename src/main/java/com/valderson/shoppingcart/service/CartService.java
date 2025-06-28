@@ -6,9 +6,11 @@ import com.valderson.shoppingcart.dto.response.CartResponse;
 import com.valderson.shoppingcart.entity.CartItem;
 import com.valderson.shoppingcart.entity.Product;
 import com.valderson.shoppingcart.entity.ShoppingCart;
+import com.valderson.shoppingcart.entity.User;
 import com.valderson.shoppingcart.repository.CartItemRepository;
 import com.valderson.shoppingcart.repository.ProductRepository;
 import com.valderson.shoppingcart.repository.ShoppingCartRepository;
+import com.valderson.shoppingcart.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +28,11 @@ public class CartService {
     private final ShoppingCartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
 
     public CartResponse getCartByUserId(Long userId) {
         ShoppingCart cart = findOrCreateCart(userId);
-        List<CartItem> items = cartItemRepository.findByShoppingCartId(cart.getId());
+        List<CartItem> items = cart.getCartItems();
 
         return buildCartResponse(cart, items);
     }
@@ -42,8 +45,9 @@ public class CartService {
         ShoppingCart cart = findOrCreateCart(userId);
 
         // Verificar se item já existe no carrinho
-        Optional<CartItem> existingItem = cartItemRepository
-                .findByShoppingCartIdAndProductId(cart.getId(), request.getProductId());
+        Optional<CartItem> existingItem = cart.getCartItems().stream()
+                .filter(item -> item.getProduct().getId().equals(request.getProductId()))
+                .findFirst();
 
         if (existingItem.isPresent()) {
             // Atualizar quantidade
@@ -53,8 +57,8 @@ public class CartService {
         } else {
             // Criar novo item
             CartItem newItem = CartItem.builder()
-                    .shoppingCartId(cart.getId())
-                    .productId(request.getProductId())
+                    .shoppingCart(cart)
+                    .product(product)
                     .quantity(request.getQuantity())
                     .build();
             cartItemRepository.save(newItem);
@@ -66,33 +70,51 @@ public class CartService {
 
     public CartResponse removeItemFromCart(Long userId, Long productId) {
         ShoppingCart cart = findOrCreateCart(userId);
-        cartItemRepository.deleteByShoppingCartIdAndProductId(cart.getId(), productId);
+
+        cart.getCartItems().removeIf(item -> item.getProduct().getId().equals(productId));
+        cartRepository.save(cart);
 
         return getCartByUserId(userId);
     }
 
     public BigDecimal getCartTotal(Long userId) {
         ShoppingCart cart = findOrCreateCart(userId);
-        List<CartItem> items = cartItemRepository.findByShoppingCartId(cart.getId());
+
+        List<CartItem> items = cartItemRepository.findByShoppingCartIdWithProduct(cart.getId());
 
         return items.stream()
                 .map(this::calculateItemSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    @Transactional
     public void clearCart(Long userId) {
         ShoppingCart cart = findOrCreateCart(userId);
         cartItemRepository.deleteAllByShoppingCartId(cart.getId());
     }
 
     private ShoppingCart findOrCreateCart(Long userId) {
-        return cartRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    ShoppingCart newCart = ShoppingCart.builder()
-                            .userId(userId)
-                            .build();
-                    return cartRepository.save(newCart);
-                });
+        // Buscar usuário
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        // Se o usuário já tem carrinho, retorna ele
+        if (user.getShoppingCart() != null) {
+            return user.getShoppingCart();
+        }
+
+        // Senão, cria um novo carrinho
+        ShoppingCart newCart = ShoppingCart.builder()
+                .user(user)
+                .build();
+
+        ShoppingCart savedCart = cartRepository.save(newCart);
+
+        // Atualiza o relacionamento bidirecional
+        user.setShoppingCart(savedCart);
+        userRepository.save(user);
+
+        return savedCart;
     }
 
     private CartResponse buildCartResponse(ShoppingCart cart, List<CartItem> items) {
@@ -106,7 +128,7 @@ public class CartService {
 
         return CartResponse.builder()
                 .id(cart.getId())
-                .userId(cart.getUserId())
+                .userId(cart.getUser().getId())
                 .items(itemResponses)
                 .totalAmount(total)
                 .updatedAt(cart.getUpdatedAt())
@@ -114,9 +136,7 @@ public class CartService {
     }
 
     private CartItemResponse mapToCartItemResponse(CartItem item) {
-        Product product = productRepository.findById(item.getProductId())
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
-
+        Product product = item.getProduct();
         BigDecimal subtotal = calculateItemSubtotal(item);
 
         return CartItemResponse.builder()
@@ -130,9 +150,7 @@ public class CartService {
     }
 
     private BigDecimal calculateItemSubtotal(CartItem item) {
-        Product product = productRepository.findById(item.getProductId())
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
-
+        Product product = item.getProduct();
         return product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
     }
 }
